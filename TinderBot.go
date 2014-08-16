@@ -39,13 +39,12 @@ func main() {
 
 	fmt.Println("Running...")
 
-	// Print stats every 10 minutes
+	// Print stats every 5 minutes
 	go statsScheduler()
 
 	// Get prospects
 	for {
 		getProspects()
-		go getProspects()
 	}
 }
 
@@ -146,6 +145,7 @@ func likeUser(userId string) {
 		fmt.Println("At line 176")
 	}
 
+	// TODO: Test and fix this
 	if p.Match {
 		// We have a match! Increment counter
 		amountOfMatches++
