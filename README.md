@@ -5,7 +5,8 @@ I thought, I can do that too, and because I am currently learning Go I decided t
 
 ## Usage
 * Clone repository
-* At line 13 of TinderBot.go enter your own auth token. (See the article on how to find your token)
+* Build using go build
+* Run application
 
 ## Disclaimer
-This bot is not perfect, contains unreachable code etc. but it works and I don't really feel like fixing it.
+This bot is not perfect and may contain bugs.
