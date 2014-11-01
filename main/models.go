@@ -14,3 +14,18 @@ type Prospect struct {
 	Name string `json:"name"`
 	Birthdate string `json:"birth_date"`
 }
+
+type FacebookToken struct {
+	Token string `json:"facebook_token"`
+}
+
+type Profile struct {
+	TinderAccessToken string `json:"token"`
+	User User `json:"user"`
+}
+
+type User struct {
+	Id string `json:"_id"`
+	Name string `json:"full_name"`
+	TinderAccessToken string `json:"api_token"`
+}

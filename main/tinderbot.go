@@ -6,21 +6,34 @@ import (
 	"strings"
 	"io/ioutil"
 	"encoding/json"
+	"errors"
+	"log"
+	"bytes"
 )
 
 var (
-	token string
+	facebookToken FacebookToken
+	amountOfEmptyResults int = 0
+	tinderAccessToken string
 )
 
 func main() {
-	for len(token) < 1 {
-		fmt.Println("Please enter your Tinder Access Token: ")
-		fmt.Scanln(&token)
+	fmt.Println("Welcome to TinderBot")
+
+	for len(facebookToken.Token) < 1 {
+		fmt.Println("Please enter your Facebook Access Token: ")
+		fmt.Scanln(&facebookToken.Token)
 	}
 
-	for {
+	if err := retrieveAccessToken(); err != nil {
+		log.Fatal("Failed to retrieve Access Token.\nIs the token you supplied valid?")
+	}
+
+	for amountOfEmptyResults < 10 {
 		getProspects()
 	}
+
+	fmt.Println("We haven't retrieved any results in a while...\nOur job is done for now, Goodbye!")
 }
 
 // Sends requests to Tinder for new prospects and likes all of them.
@@ -57,6 +70,7 @@ func getProspects() {
 	// Sometimes Tinder returns an empty array for some reason.
 	if len(body) < 1 {
 		fmt.Println("Tinder returned no results.")
+		amountOfEmptyResults++;
 		return;
 	}
 
@@ -69,6 +83,9 @@ func getProspects() {
 
 	// Like all new prospects
 	likeAllProspects(prospects.Results)
+
+	// Reset amount of empty results since we still are able to like people
+	amountOfEmptyResults = 0;
 }
 
 func likeAllProspects(prospects []Prospect) {
@@ -111,8 +128,43 @@ func setHeaders(req *http.Request) (*http.Request) {
 	// Set Headers
 	req.Header.Set("platform", "android")
 	req.Header.Set("User-Agent", "Tinder Android Version 3.2.1")
-	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("X-Auth-Token", tinderAccessToken)
 	req.Header.Set("os-version", "19")
 	req.Header.Set("app-version", "759")
 	return req
+}
+
+func retrieveAccessToken() error {
+	if len(facebookToken.Token) > 0 {
+
+		// Marshal struct into JSON
+		b, err := json.Marshal(facebookToken)
+		if err != nil {
+			return err;
+		}
+
+		// Create IO reader
+		postBody := bytes.NewReader(b)
+
+		// Make request
+		const authURL = "https://api.gotinder.com/auth"
+		resp, err := http.Post(authURL, "application/json", postBody)
+
+		response, err := ioutil.ReadAll(resp.Body)
+
+		// Unmarshal response
+		var profile Profile
+		if err := json.Unmarshal(response, &profile); err != nil {
+			fmt.Println("Error unmarshaling Tinder's response")
+			return err
+		}
+
+		tinderAccessToken = profile.TinderAccessToken
+
+		fmt.Println("Authenticated " + profile.User.Name + " with Tinder")
+
+		return nil
+	} else {
+		return errors.New("Invalid Facebook token")
+	}
 }
