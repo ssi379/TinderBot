@@ -85,7 +85,9 @@ func getProspects() {
 	likeAllProspects(prospects.Results)
 
 	// Reset amount of empty results since we still are able to like people
-	amountOfEmptyResults = 0;
+	if (len(prospects.Results) > 0) {
+		amountOfEmptyResults = 0;
+	}
 }
 
 func likeAllProspects(prospects []Prospect) {
