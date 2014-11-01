@@ -9,6 +9,7 @@ import (
 	"errors"
 	"log"
 	"bytes"
+	"os"
 )
 
 var (
@@ -20,9 +21,16 @@ var (
 func main() {
 	fmt.Println("Welcome to TinderBot")
 
-	for len(facebookToken.Token) < 1 {
-		fmt.Println("Please enter your Facebook Access Token: ")
-		fmt.Scanln(&facebookToken.Token)
+	if !checkConfig() {
+		for len(facebookToken.Token) < 1 {
+			fmt.Println("Please enter your Facebook Access Token: ")
+			fmt.Scanln(&facebookToken.Token)
+		}
+		facebookToken.save()
+	} else {
+		if err := loadConfig(); err != nil {
+			log.Fatal("TinderBot is unable to load the configuration file")
+		}
 	}
 
 	if err := retrieveAccessToken(); err != nil {
@@ -169,4 +177,28 @@ func retrieveAccessToken() error {
 	} else {
 		return errors.New("Invalid Facebook token")
 	}
+}
+
+func checkConfig() bool {
+	if _, err := os.Stat("config.json"); os.IsNotExist(err) {
+		return false
+	} else {
+		return true
+	}
+}
+
+func loadConfig() error {
+	b, _ := ioutil.ReadFile("config.json")
+	if err := json.Unmarshal(b, &facebookToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *FacebookToken) save() error {
+	output, err := json.MarshalIndent(c, "", "    ")
+	if err != nil {
+		fmt.Println("Unable to marshal configuration")
+	}
+	return ioutil.WriteFile("config.json", output, 0600)
 }
