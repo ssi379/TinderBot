@@ -52,7 +52,17 @@ func main() {
 		if strings.ContainsAny(input, "Y y") {
 			spoofLocation()
 		} else {
-			amountOfEmptyResults = 0
+			if amountOfEmptyResults > 0 {
+				fmt.Println("Retry? [Y/n]")
+				input, err = inputReader.ReadString('\n')
+				if (strings.ContainsAny(input, "Y y")) {
+					amountOfEmptyResults = 0;
+				} else {
+					// Quit
+					fmt.Println("Goodbye!")
+					return
+				}
+			}
 		}
 
 		for amountOfEmptyResults < 10 {
