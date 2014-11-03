@@ -10,10 +10,11 @@ import (
 	"log"
 	"bytes"
 	"os"
+	"bufio"
 )
 
 var (
-	facebookToken FacebookToken
+	config Configuration
 	amountOfEmptyResults int = 0
 	tinderAccessToken string
 )
@@ -22,11 +23,11 @@ func main() {
 	fmt.Println("Welcome to TinderBot")
 
 	if !checkConfig() {
-		for len(facebookToken.Token) < 1 {
+		for len(config.FacebookToken) < 1 {
 			fmt.Println("Please enter your Facebook Access Token: ")
-			fmt.Scanln(&facebookToken.Token)
+			fmt.Scanln(&config.FacebookToken)
 		}
-		facebookToken.save()
+		config.save()
 	} else {
 		if err := loadConfig(); err != nil {
 			log.Fatal("TinderBot is unable to load the configuration file")
@@ -37,11 +38,29 @@ func main() {
 		log.Fatal("Failed to retrieve Access Token.\nIs the token you supplied valid?")
 	}
 
-	for amountOfEmptyResults < 10 {
-		getProspects()
-	}
+	inputReader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("We haven't retrieved any results in a while...\nOur job is done for now, Goodbye!")
+	for {
+		fmt.Println("Do you want to change your location? [Y/n]")
+		input, err := inputReader.ReadString('\n')
+
+		if err != nil {
+			fmt.Println("There were errors reading your input, exiting program.")
+			return
+		}
+
+		if strings.ContainsAny(input, "Y y") {
+			spoofLocation()
+		} else {
+			amountOfEmptyResults = 0
+		}
+
+		for amountOfEmptyResults < 10 {
+			getProspects()
+		}
+
+		fmt.Println("We haven't retrieved any results in a while...")
+	}
 }
 
 // Sends requests to Tinder for new prospects and likes all of them.
@@ -137,15 +156,18 @@ func likeUser(prospect Prospect) {
 func setHeaders(req *http.Request) (*http.Request) {
 	// Set Headers
 	req.Header.Set("platform", "android")
-	req.Header.Set("User-Agent", "Tinder Android Version 3.2.1")
+	req.Header.Set("User-Agent", "Tinder Android Version 3.3.2")
 	req.Header.Set("X-Auth-Token", tinderAccessToken)
 	req.Header.Set("os-version", "19")
-	req.Header.Set("app-version", "759")
+	req.Header.Set("app-version", "763")
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	return req
 }
 
 func retrieveAccessToken() error {
-	if len(facebookToken.Token) > 0 {
+	if len(config.FacebookToken) > 0 {
+
+		facebookToken := FacebookToken{Token: config.FacebookToken}
 
 		// Marshal struct into JSON
 		b, err := json.Marshal(facebookToken)
@@ -189,16 +211,60 @@ func checkConfig() bool {
 
 func loadConfig() error {
 	b, _ := ioutil.ReadFile("config.json")
-	if err := json.Unmarshal(b, &facebookToken); err != nil {
+	if err := json.Unmarshal(b, &config); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *FacebookToken) save() error {
+func (c *Configuration) save() error {
 	output, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("Unable to marshal configuration")
 	}
 	return ioutil.WriteFile("config.json", output, 0600)
+}
+
+func spoofLocation() {
+	fmt.Println("Please enter your new Latitude: ")
+	fmt.Scanf("%f\n", &config.Lat)
+	fmt.Println("Please enter your new Longitude: ")
+	fmt.Scanf("%f\n", &config.Lon)
+	fmt.Printf("Setting location to: %f, %f\n", config.Lat, config.Lon)
+
+	// Marshal new location into json
+	ping := PingWrapper{Lat: config.Lat, Lon: config.Lon}
+	b, err := json.Marshal(ping)
+	if err != nil {
+		fmt.Println("Error marshaling JSON: " + err.Error())
+		return
+	}
+
+	// Create IO reader
+	postBody := bytes.NewReader(b)
+
+	// Create HTTP Client
+	httpClient := http.Client{}
+
+	// Make request
+	const pingURL = "https://api.gotinder.com/user/ping"
+	req, err := http.NewRequest("POST", pingURL, postBody)
+	if err != nil {
+		fmt.Println("Error creating POST request: " + err.Error())
+		return
+	}
+
+	// Set headers
+	setHeaders(req)
+
+	// Submit Ping request
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		fmt.Println("Setting new location failed")
+	}
+
+	if resp.StatusCode == 200 {
+		fmt.Println("New location succesfully set.")
+		amountOfEmptyResults = 0;
+	}
 }

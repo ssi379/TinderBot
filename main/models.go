@@ -19,6 +19,17 @@ type FacebookToken struct {
 	Token string `json:"facebook_token"`
 }
 
+type PingWrapper struct {
+	Lon float32 `json:"lon"`
+	Lat float32 `json:"lat"`
+}
+
+type Configuration struct {
+	FacebookToken string `json:"facebook_token"`
+	Lat float32 `json:"lat"`
+	Lon float32 `json:"lon"`
+}
+
 type Profile struct {
 	TinderAccessToken string `json:"token"`
 	User User `json:"user"`
