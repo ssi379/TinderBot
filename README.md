@@ -9,4 +9,7 @@ I thought, I can do that too, and because I am currently learning Go I decided t
 * Run application
 
 ## Disclaimer
-This bot is not perfect and may contain bugs.
+This bot is not perfect and may contain bugs.i
+
+## Update 3/10/2015
+Since Tinder rate limited their API there is not much use for this bot, but if you want to try it out, it still works.
