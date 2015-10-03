@@ -7,6 +7,7 @@ I thought, I can do that too, and because I am currently learning Go I decided t
 * Clone repository
 * Build using go build
 * Run application
+* Enter your Facebook Token for Tinder, you can obtain this by sniffing the network traffic from the Tinder app.
 
 ## Disclaimer
 This bot is not perfect and may contain bugs.
