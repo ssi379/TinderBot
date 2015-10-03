@@ -3,14 +3,12 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"io/ioutil"
 	"encoding/json"
 	"errors"
 	"log"
 	"bytes"
 	"os"
-	"bufio"
 )
 
 var (
@@ -38,38 +36,9 @@ func main() {
 		log.Fatal("Failed to retrieve Access Token.\nIs the token you supplied valid?")
 	}
 
-	inputReader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Println("Do you want to change your location? [Y/n]")
-		input, err := inputReader.ReadString('\n')
-
-		if err != nil {
-			fmt.Println("There were errors reading your input, exiting program.")
-			return
-		}
-
-		if strings.ContainsAny(input, "Y y") {
-			spoofLocation()
-		} else {
-			if amountOfEmptyResults > 0 {
-				fmt.Println("Retry? [Y/n]")
-				input, err = inputReader.ReadString('\n')
-				if (strings.ContainsAny(input, "Y y")) {
-					amountOfEmptyResults = 0;
-				} else {
-					// Quit
-					fmt.Println("Goodbye!")
-					return
-				}
-			}
-		}
-
-		for amountOfEmptyResults < 10 {
-			getProspects()
-		}
-
-		fmt.Println("We haven't retrieved any results in a while...")
+		getProspects()
 	}
 }
 
@@ -80,10 +49,9 @@ func getProspects() {
 	// Create HTTP client
 	httpClient := http.Client{}
 
-	// Create POST request
-	req, err := http.NewRequest("POST", url, strings.NewReader("{\"limit\":40}"))
+	req, err := http.NewRequest("GET", url, nil);
 	if err != nil {
-		fmt.Println("Error creating POST request: " + err.Error())
+		fmt.Println("Error creating GET request: " + err.Error())
 		return
 	}
 
